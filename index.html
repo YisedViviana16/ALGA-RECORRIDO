@@ -1,3 +1,4 @@
+HTML
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -215,6 +216,7 @@
       border-radius: 6px;
       font-size: 0.82rem;
       cursor: pointer;
+      transition: background 0.15s;
     }
 
     .tag-btn:hover {
@@ -307,8 +309,6 @@
       display: inline-block;
       padding: 0 2rem;
     }
-
-    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -326,7 +326,6 @@
   </header>
 
   <main class="container">
-    <!-- Step Container (Se inyecta dinámicamente) -->
     <div id="stepContainer"></div>
   </main>
 
@@ -390,7 +389,7 @@
     };
 
     /* =========================================================================
-       MOTOR DE NAVEGACIÓN, PERSISTENCIA Y GAMIFICACIÓN (NO MODIFICAR)
+       MOTOR DE NAVEGACIÓN, PERSISTENCIA Y GAMIFICACIÓN
        ========================================================================= */
     const STORAGE_KEY = "alga_recorrido_state";
 
@@ -429,7 +428,7 @@
       }
     }
 
-    const totalSteps = 6;
+    const totalSteps = 5;
 
     function updateProgress() {
       const progress = Math.min(100, Math.round((state.step / totalSteps) * 100));
@@ -448,7 +447,7 @@
             <div class="card">
               <span class="step-badge">Inicio</span>
               <h1>Bienvenido/a a ALGA</h1>
-              <p>Un entorno gamificado para transformar los comentarios de tus docentes y pares en acciones concretas de aprendizaje y excelencia académica.</p>
+              <p>Un entorno formativo para transformar los comentarios de tus docentes y pares en acciones concretas de aprendizaje y mejora continua.</p>
               
               <div class="input-group" style="margin-top: 1.5rem;">
                 <label for="studentNameInput">Ingresa tu nombre completo para comenzar:</label>
@@ -478,13 +477,13 @@
 
               <div class="input-group">
                 <label for="feedbackInput">Comentario recibido:</label>
-                <textarea id="feedbackInput" rows="3" placeholder="Pega aquí el comentario o retroalimentación...">${state.rawFeedback || ''}</textarea>
+                <textarea id="feedbackInput" rows="3" oninput="updateRawFeedback(this.value)" placeholder="Pega aquí el comentario o retroalimentación...">${state.rawFeedback || ''}</textarea>
               </div>
 
               <div class="input-group">
                 <label>¿A qué zona pertenece principalmente este comentario?</label>
                 ${CONFIG.reto1Zones.map(zone => `
-                  <div class="option-card ${state.feedbackZone === zone.id ? 'selected' : ''}" onclick="selectZone('${zone.id}')">
+                  <div id="zone_${zone.id}" class="option-card zone-card ${state.feedbackZone === zone.id ? 'selected' : ''}" onclick="selectZone('${zone.id}')">
                     <strong>${zone.label}</strong>
                     <div style="font-size: 0.88rem; color: var(--text-muted);">${zone.desc}</div>
                   </div>
@@ -540,7 +539,7 @@
                 <div class="badge-icon">🔍</div>
                 <div>
                   <strong>¡Insignia Desbloqueada: Analista del Saber!</strong>
-                  <div style="font-size: 0.88rem; color: #b45309;">Identificas comentarios útiles y accionables.</div>
+                  <div style="font-size: 0.88rem; color: #b45309;">Identificas comentarios útiles y orientados a la acción.</div>
                 </div>
               </div>
 
@@ -551,7 +550,7 @@
               ${CONFIG.reto3Items.map((item, idx) => `
                 <div style="margin-bottom: 1.5rem;">
                   <p><strong>${item.statement}</strong></p>${item.options.map((opt, optIdx) => `
-                    <div class="option-card" onclick="selectReto3Option(this, ${opt.isCorrect})">
+                    <div class="option-card" onclick="selectReto3Option(this)">
                       ${opt.text}
                     </div>
                   `).join('')}
@@ -566,7 +565,7 @@
           `;
           break;
 
-        case 4: // Reto 4: Evidencia de Mejora y Plan de Acción
+        case 4: // Reto 4: Plan de Acción
           stepContainer.innerHTML = `
             <div class="card">
               <div class="badge-modal">
@@ -583,7 +582,7 @@
 
               <div class="input-group">
                 <label for="actionPlan">Escribe tu compromiso concreto de mejora:</label>
-                <textarea id="actionPlan" rows="4" placeholder="Ejemplo: Para la versión final de mi trabajo voy a reformular la hipótesis incorporando dos citas académicas, resolviendo la sugerencia recibida.">${state.actionCommitment || ''}</textarea>
+                <textarea id="actionPlan" rows="4" placeholder="Ejemplo: Para la versión final de mi trabajo voy a reorganizar los argumentos del segundo párrafo e incluir dos fuentes confiables...">${state.actionCommitment || ''}</textarea>
               </div>
 
               <div class="btn-row">
@@ -594,7 +593,7 @@
           `;
           break;
 
-        case 5: // Cierre, Transferencia y Certificado Final
+        case 5: // Cierre y Certificado Final
           triggerConfetti();
           stepContainer.innerHTML = `
             <div class="card">
@@ -634,7 +633,9 @@
       updateProgress();
     }
 
-    // Funciones controladoras
+    /* =========================================================================
+       FUNCIONES CONTROLADORAS
+       ========================================================================= */
     function startJourney() {
       const name = document.getElementById("studentNameInput").value.trim();
       if (!name) {
@@ -647,19 +648,38 @@
       renderStep();
     }
 
+    // Guarda lo que el estudiante escribe en el textarea en tiempo real
+    function updateRawFeedback(value) {
+      state.rawFeedback = value;
+    }
+
+    // Inserta los conectores léxicos sin borrar el texto existente
     function insertTag(text) {
       const txt = document.getElementById("feedbackInput");
+      if (!txt) return;
       txt.value += (txt.value.length > 0 ? " " : "") + text + " ";
+      state.rawFeedback = txt.value;
       txt.focus();
     }
 
+    // Selecciona la zona visualmente sin recargar la pantalla
     function selectZone(id) {
       state.feedbackZone = id;
-      renderStep();
+      const txt = document.getElementById("feedbackInput");
+      if (txt) {
+        state.rawFeedback = txt.value;
+      }
+      const cards = document.querySelectorAll(".zone-card");
+      cards.forEach(card => card.classList.remove("selected"));
+      const selectedCard = document.getElementById(`zone_${id}`);
+      if (selectedCard) {
+        selectedCard.classList.add("selected");
+      }
     }
 
     function completeReto1() {
-      const feedback = document.getElementById("feedbackInput").value.trim();
+      const txt = document.getElementById("feedbackInput");
+      const feedback = txt ? txt.value.trim() : state.rawFeedback;
       if (!feedback) {
         alert("Por favor ingresa un comentario o sugerencia antes de continuar.");
         return;
@@ -682,7 +702,7 @@
       fBox.innerText = opt.feedback;
     }
 
-    function selectReto3Option(element, isCorrect) {
+    function selectReto3Option(element) {
       const parent = element.parentElement;
       Array.from(parent.children).forEach(child => child.classList.remove('selected'));
       element.classList.add('selected');
