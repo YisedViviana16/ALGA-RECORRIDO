@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALGA: Del Feedback a la Acción</title>
+  <!-- Google Fonts & Canvas Confetti -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --secondary: #0d9488;
+      --accent: #f59e0b;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --radius: 14px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-track {
+      flex: 1;
+      max-width: 250px;
+      background: var(--border);
+      height: 8px;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      flex: 1;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 2.25rem;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 0.82rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 99px;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    h1, h2, h3 { color: #0f172a; font-weight: 700; }
+    h1 { font-size: 1.85rem; margin-bottom: 0.75rem; }
+    h2 { font-size: 1.4rem; margin-bottom: 0.75rem; }
+    p { margin-bottom: 1rem; color: #475569; }
+
+    .input-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 0.85rem 1.6rem;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    /* Word Bank / Scaffolding */
+    .word-bank {
+      background: #f0fdfa;
+      border: 1px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .word-bank p {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #115e59;
+      margin-bottom: 0.5rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tag-btn {
+      background: white;
+      border: 1px solid #ccfbf1;
+      color: #0f766e;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .tag-btn:hover {
+      background: #ccfbf1;
+    }
+
+    /* Quiz and feedback styles */
+    .option-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .option-card:hover {
+      border-color: var(--primary);
+      background: #f0f9ff;
+    }
+
+    .option-card.selected {
+      border-color: var(--primary);
+      background: #e0f2fe;
+    }
+
+    .feedback-box {
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .feedback-box.correct {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      display: block;
+    }
+
+    .feedback-box.incorrect {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      display: block;
+    }
+
+    /* Badge alert */
+    .badge-modal {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge-icon {
+      font-size: 2.2rem;
+      background: #fef3c7;
+      padding: 0.5rem;
+      border-radius: 50%;
+    }
+
+    /* Certificate View */
+    .cert-box {
+      background: white;
+      border: 4px double #cbd5e1;
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      margin: 1.5rem 0;
+    }
+
+    .cert-title {
+      font-size: 1.8rem;
+      color: var(--primary-dark);
+      letter-spacing: 1px;
+    }
+
+    .cert-name {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 1.5rem 0;
+      border-bottom: 2px dashed #94a3b8;
+      display: inline-block;
+      padding: 0 2rem;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="brand">
+        <span>🌱</span>
+        <span id="headerTitle">ALGA</span>
+      </div>
+      <div class="progress-track" title="Progreso del recorrido">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Step Container (Se inyecta dinámicamente) -->
+    <div id="stepContainer"></div>
+  </main>
+
+  <script>
+    /* =========================================================================
+       ZONA EDITABLE POR EL DOCENTE (CONFIGURACIÓN GENÉRICA)
+       Cualquier área curricular solo edita este bloque sin modificar el motor.
+       ========================================================================= */
+    const CONFIG = {
+      projectTitle: "ALGA: Del Feedback a la Acción",
+      discipline: "Cualquier Asignatura / Transversal",
+      canvaFormUrl: "", // URL opcional de formulario para recolección oficial de evidencias
+
+      // Banco de expresiones para enriquecer el léxico reflexivo
+      lexicalBank: [
+        "Identifiqué que...",
+        "Debo reestructurar...",
+        "Es necesario precisar...",
+        "Mi compañero sugiere...",
+        "Para fundamentar mejor...",
+        "Voy a contrastar..."
+      ],
+
+      // Reto 1: Clasificación de feedback recibido
+      reto1Zones: [
+        { id: "forma", label: "Aspectos de Forma / Estructura", desc: "Redacción, ortografía, formato, diseño visual, orden" },
+        { id: "fondo", label: "Aspectos de Contenido / Criterios", desc: "Argumentación, validez de datos, análisis conceptual, cumplimiento de rúbrica" },
+        { id: "positivo", label: "Fortalezas Reconocidas", desc: "Aciertos que debo conservar y potenciar en la entrega final" }
+      ],
+
+      // Reto 2: Reconocimiento de feedback de calidad
+      reto2Questions: [
+        {
+          question: "¿Cuál de estos comentarios aporta una retroalimentación formativa y accionable?",
+          options: [
+            { text: "Tu trabajo está muy bien, me gustó mucho.", isCorrect: false, feedback: "Es un comentario amable, pero vago: no te indica qué estuvo bien ni cómo replicarlo." },
+            { text: "En la sección 2 falta sustentar el argumento principal con evidencia concreta o fuentes confiables.", isCorrect: true, feedback: "¡Correcto! Es específico, apunta a un criterio de logro y propone una ruta clara de acción." },
+            { text: "Todo está mal planteado, vuélvelo a hacer.", isCorrect: false, feedback: "Inadecuado: califica negativamente sin detallar el criterio ni orientar la mejora." }
+          ]
+        },
+        {
+          question: "¿Qué actitud fomenta una autorregulación efectiva frente a una crítica rigurosa?",
+          options: [
+            { text: "Defender mi borrador sin cambiar nada porque el evaluador no entendió.", isCorrect: false, feedback: "Cierra la oportunidad de mejora formativa." },
+            { text: "Comparar la sugerencia con la rúbrica institucional y priorizar qué modificar para alcanzar el nivel óptimo.", isCorrect: true, feedback: "¡Excelente! Demuestra juicio evaluativo y metacognición activa." },
+            { text: "Borrar todo el trabajo y empezar de cero por frustración.", isCorrect: false, feedback: "No es necesario rehacer todo: la retroalimentación sirve para iterar sobre lo construido." }
+          ]
+        }
+      ],
+
+      // Reto 3: Coevaluación
+      reto3Items: [
+        {
+          statement: "Al valorar el trabajo de un compañero/a, lo más constructivo es:",
+          options: [
+            { text: "Destacar únicamente los errores de redacción ortográfica para no incomodar.", isCorrect: false },
+            { text: "Equilibrar fortalezas alcanzadas con preguntas guía que motiven su profundización.", isCorrect: true }
+          ]
+        }
+      ]
+    };
+
+    /* =========================================================================
+       MOTOR DE NAVEGACIÓN, PERSISTENCIA Y GAMIFICACIÓN (NO MODIFICAR)
+       ========================================================================= */
+    const STORAGE_KEY = "alga_recorrido_state";
+
+    let state = {
+      step: 0,
+      studentName: "",
+      rawFeedback: "",
+      feedbackZone: "",
+      actionCommitment: "",
+      userAnswers: {},
+      transferAnswers: {}
+    };
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try { state = JSON.parse(saved); } catch (e) { console.error("Error al cargar estado:", e); }
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateProgress();
+    }
+
+    function resetProgress() {
+      if (confirm("¿Deseas reiniciar tu recorrido desde el inicio?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      }
+    }
+
+    const totalSteps = 6;
+
+    function updateProgress() {
+      const progress = Math.min(100, Math.round((state.step / totalSteps) * 100));
+      document.getElementById("progressBar").style.width = `${progress}%`;
+    }
+
+    const stepContainer = document.getElementById("stepContainer");
+
+    function renderStep() {
+      stepContainer.innerHTML = "";
+      window.scrollTo(0, 0);
+
+      switch (state.step) {
+        case 0: // Bienvenida e Identificación
+          stepContainer.innerHTML = `
+            <div class="card">
+              <span class="step-badge">Inicio</span>
+              <h1>Bienvenido/a a ALGA</h1>
+              <p>Un entorno gamificado para transformar los comentarios de tus docentes y pares en acciones concretas de aprendizaje y excelencia académica.</p>
+              
+              <div class="input-group" style="margin-top: 1.5rem;">
+                <label for="studentNameInput">Ingresa tu nombre completo para comenzar:</label>
+                <input type="text" id="studentNameInput" placeholder="Ej. Camila Morales" value="${state.studentName || ''}">
+              </div>
+
+              <div class="btn-row" style="justify-content: flex-end;">
+                <button class="btn-primary" onclick="startJourney()">Comenzar Recorrido →</button>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 1: // Reto 1: Clasificación de Feedback
+          stepContainer.innerHTML = `
+            <div class="card">
+              <span class="step-badge">Reto 1 • Feedback Literacy</span>
+              <h2>Clasifica tu Retroalimentación</h2>
+              <p>Pega o redacta un comentario o sugerencia que hayas recibido en un borrador o entrega de cualquier materia.</p>
+
+              <div class="word-bank">
+                <p>Banco de léxico reflexivo (haz clic para insertar):</p>
+                <div class="tags">
+                  ${CONFIG.lexicalBank.map(tag => `<span class="tag-btn" onclick="insertTag('${tag}')">${tag}</span>`).join('')}
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="feedbackInput">Comentario recibido:</label>
+                <textarea id="feedbackInput" rows="3" placeholder="Pega aquí el comentario o retroalimentación...">${state.rawFeedback || ''}</textarea>
+              </div>
+
+              <div class="input-group">
+                <label>¿A qué zona pertenece principalmente este comentario?</label>
+                ${CONFIG.reto1Zones.map(zone => `
+                  <div class="option-card ${state.feedbackZone === zone.id ? 'selected' : ''}" onclick="selectZone('${zone.id}')">
+                    <strong>${zone.label}</strong>
+                    <div style="font-size: 0.88rem; color: var(--text-muted);">${zone.desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <div class="btn-row">
+                <button class="btn-secondary" onclick="prevStep()">← Atrás</button>
+                <button class="btn-primary" onclick="completeReto1()">Continuar →</button>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 2: // Reto 2: Reconocer Feedback de Calidad
+          stepContainer.innerHTML = `
+            <div class="card">
+              <div class="badge-modal">
+                <div class="badge-icon">🧭</div>
+                <div>
+                  <strong>¡Insignia Desbloqueada: Explorador/a del Eco!</strong>
+                  <div style="font-size: 0.88rem; color: #b45309;">Has procesado y decodificado tu retroalimentación inicial.</div>
+                </div>
+              </div>
+
+              <span class="step-badge">Reto 2 • Juicio Evaluativo</span>
+              <h2>Reconocer Feedback de Calidad</h2>
+              <p>Evalúa las siguientes situaciones para entrenar tu capacidad de discernimiento:</p>
+
+              ${CONFIG.reto2Questions.map((q, qIndex) => `
+                <div style="margin-bottom: 2rem;">
+                  <p><strong>${qIndex + 1}. ${q.question}</strong></p>${q.options.map((opt, optIndex) => `
+                    <div class="option-card" id="q${qIndex}_opt${optIndex}" onclick="checkReto2(${qIndex}, ${optIndex}, ${opt.isCorrect})">
+                      ${opt.text}
+                    </div>
+                  `).join('')}
+                  <div id="feedback_q${qIndex}" class="feedback-box"></div>
+                </div>
+              `).join('')}
+
+              <div class="btn-row">
+                <button class="btn-secondary" onclick="prevStep()">← Atrás</button>
+                <button class="btn-primary" onclick="nextStep()">Siguiente Reto →</button>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 3: // Reto 3: Coevaluación
+          stepContainer.innerHTML = `
+            <div class="card">
+              <div class="badge-modal">
+                <div class="badge-icon">🔍</div>
+                <div>
+                  <strong>¡Insignia Desbloqueada: Analista del Saber!</strong>
+                  <div style="font-size: 0.88rem; color: #b45309;">Identificas comentarios útiles y accionables.</div>
+                </div>
+              </div>
+
+              <span class="step-badge">Reto 3 • Diálogo Formativo</span>
+              <h2>Pacto de Coevaluación</h2>
+              <p>La coevaluación entre pares exige empatía, rigor y claridad metodológica.</p>
+
+              ${CONFIG.reto3Items.map((item, idx) => `
+                <div style="margin-bottom: 1.5rem;">
+                  <p><strong>${item.statement}</strong></p>${item.options.map((opt, optIdx) => `
+                    <div class="option-card" onclick="selectReto3Option(this, ${opt.isCorrect})">
+                      ${opt.text}
+                    </div>
+                  `).join('')}
+                </div>
+              `).join('')}
+
+              <div class="btn-row">
+                <button class="btn-secondary" onclick="prevStep()">← Atrás</button>
+                <button class="btn-primary" onclick="nextStep()">Avanzar al Plan →</button>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 4: // Reto 4: Evidencia de Mejora y Plan de Acción
+          stepContainer.innerHTML = `
+            <div class="card">
+              <div class="badge-modal">
+                <div class="badge-icon">🛠️</div>
+                <div>
+                  <strong>¡Insignia Desbloqueada: Constructor/a ALGA!</strong>
+                  <div style="font-size: 0.88rem; color: #b45309;">Dominas los principios del diálogo formativo entre pares.</div>
+                </div>
+              </div>
+
+              <span class="step-badge">Reto 4 • Autorregulación</span>
+              <h2>Plan de Acción: Del Feedback a la Práctica</h2>
+              <p>Transforma los comentarios en una promesa de mejora verificable antes de tu entrega final.</p>
+
+              <div class="input-group">
+                <label for="actionPlan">Escribe tu compromiso concreto de mejora:</label>
+                <textarea id="actionPlan" rows="4" placeholder="Ejemplo: Para la versión final de mi trabajo voy a reformular la hipótesis incorporando dos citas académicas, resolviendo la sugerencia recibida.">${state.actionCommitment || ''}</textarea>
+              </div>
+
+              <div class="btn-row">
+                <button class="btn-secondary" onclick="prevStep()">← Atrás</button>
+                <button class="btn-primary" onclick="completeReto4()">Consolidar Mejora →</button>
+              </div>
+            </div>
+          `;
+          break;
+
+        case 5: // Cierre, Transferencia y Certificado Final
+          triggerConfetti();
+          stepContainer.innerHTML = `
+            <div class="card">
+              <div class="badge-modal">
+                <div class="badge-icon">🪞</div>
+                <div>
+                  <strong>¡Insignia Desbloqueada: Espejo del Pensamiento!</strong>
+                  <div style="font-size: 0.88rem; color: #b45309;">Has formulado un plan de acción autónomo.</div>
+                </div>
+              </div>
+
+              <div class="cert-box">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🌟</div>
+                <div class="cert-title">CONSTANCIA DE LOGRO FORMATIVO</div>
+                <p style="margin-top: 0.5rem;">Se reconoce que</p>
+                <div class="cert-name">${state.studentName || 'Estudiante'}</div>
+                <p>Ha completado exitosamente el recorrido metodológico de autorregulación y juicio evaluativo <strong>ALGA (Del Feedback a la Acción)</strong>, demostrando capacidad para interpretar comentarios y traducirlos en mejoras verificables.</p>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1.5rem;">
+                  Distinción alcanzada: <strong>Maestro/a ALGA</strong> • ${new Date().toLocaleDateString()}
+                </div>
+              </div>
+
+              ${CONFIG.canvaFormUrl ? `
+                <div style="text-align: center; margin: 1.5rem 0;">
+                  <a href="${CONFIG.canvaFormUrl}" target="_blank" class="btn-primary" style="display: inline-block; text-decoration: none;">Registrar Evidencia en Formulario Externo ↗</a>
+                </div>
+              ` : ''}
+
+              <div class="btn-row" style="justify-content: center; gap: 1rem;">
+                <button class="btn-secondary" onclick="window.print()">🖨️ Imprimir / Guardar Certificado</button>
+                <button class="btn-secondary" onclick="resetProgress()">Reiniciar Recorrido</button>
+              </div>
+            </div>
+          `;
+          break;
+      }
+      updateProgress();
+    }
+
+    // Funciones controladoras
+    function startJourney() {
+      const name = document.getElementById("studentNameInput").value.trim();
+      if (!name) {
+        alert("Por favor ingresa tu nombre para personalizar tu experiencia.");
+        return;
+      }
+      state.studentName = name;
+      state.step = 1;
+      saveState();
+      renderStep();
+    }
+
+    function insertTag(text) {
+      const txt = document.getElementById("feedbackInput");
+      txt.value += (txt.value.length > 0 ? " " : "") + text + " ";
+      txt.focus();
+    }
+
+    function selectZone(id) {
+      state.feedbackZone = id;
+      renderStep();
+    }
+
+    function completeReto1() {
+      const feedback = document.getElementById("feedbackInput").value.trim();
+      if (!feedback) {
+        alert("Por favor ingresa un comentario o sugerencia antes de continuar.");
+        return;
+      }
+      if (!state.feedbackZone) {
+        alert("Por favor selecciona a qué zona pertenece tu comentario.");
+        return;
+      }
+      state.rawFeedback = feedback;
+      state.step = 2;
+      saveState();
+      renderStep();
+    }
+
+    function checkReto2(qIndex, optIndex, isCorrect) {
+      const q = CONFIG.reto2Questions[qIndex];
+      const opt = q.options[optIndex];
+      const fBox = document.getElementById(`feedback_q${qIndex}`);
+      fBox.className = "feedback-box " + (isCorrect ? "correct" : "incorrect");
+      fBox.innerText = opt.feedback;
+    }
+
+    function selectReto3Option(element, isCorrect) {
+      const parent = element.parentElement;
+      Array.from(parent.children).forEach(child => child.classList.remove('selected'));
+      element.classList.add('selected');
+    }
+
+    function completeReto4() {
+      const plan = document.getElementById("actionPlan").value.trim();
+      if (!plan) {
+        alert("Por favor escribe tu compromiso o plan de acción concreto.");
+        return;
+      }
+      state.actionCommitment = plan;
+      state.step = 5;
+      saveState();
+      renderStep();
+    }
+
+    function nextStep() {
+      state.step++;
+      saveState();
+      renderStep();
+    }
+
+    function prevStep() {
+      if (state.step > 0) {
+        state.step--;
+        saveState();
+        renderStep();
+      }
+    }
+
+    // Inicialización al cargar la página
+    document.getElementById("headerTitle").innerText = CONFIG.projectTitle;
+    loadState();
+    renderStep();
+  </script>
+</body>
+</html>
